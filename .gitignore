@@ -1,0 +1,13 @@
+.gradle/
+.gradle-user-home/
+.kotlin/
+**/build/
+local.properties
+PROJECT.md
+.idea/
+*.iml
+
+*.log
+node_modules/
+output/
+.playwright-cli/
