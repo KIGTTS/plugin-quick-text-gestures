@@ -1,13 +1,18 @@
 {
-  "id":"input.quick-gestures",
-  "name":"手势触发",
-  "version":"0.1.2",
-  "versionCode":3,
-  "entryClass":"com.kigtts.input.gestures.QuickGesturePlugin",
-  "apiVersion":26,
-  "minSdk":26,
-  "runtime":"android-dex",
-  "license":"GPL-3.0-only",
-  "capabilities":["ui","quick-text-read"],
-  "permissionPurposes":{"quick-text-read":"选择并发送手势绑定的已有快捷文本；词条删除后清空对应绑定。"}
+  "id": "input.quick-gestures",
+  "name": "手势触发",
+  "version": "0.1.3",
+  "versionCode": 4,
+  "entryClass": "com.kigtts.input.gestures.QuickGesturePlugin",
+  "apiVersion": 28,
+  "minSdk": 26,
+  "runtime": "android-dex",
+  "license": "GPL-3.0-only",
+  "capabilities": [
+    "ui",
+    "quick-text-read"
+  ],
+  "permissionPurposes": {
+    "quick-text-read": "选择并发送手势绑定的已有快捷文本；词条删除后清空对应绑定。"
+  }
 }

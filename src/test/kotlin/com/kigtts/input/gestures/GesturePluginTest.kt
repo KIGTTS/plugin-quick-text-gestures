@@ -29,6 +29,19 @@ class GesturePluginTest {
             }
         }
     }
+    @Test fun guidesUseTheActualRecognitionTemplatesAndKeepToggleAndBindingActionsSeparate() {
+        val page = GesturePages.settings(GestureSettings(File(temporary.newFolder(), "settings.properties")), null)
+        val guides = page.blocks.filterIsInstance<PageBlock.StrokeGuide>()
+        assertEquals(6, guides.size)
+        GestureTemplates.all.zip(guides).forEach { (template, guide) ->
+            assertEquals(template.name, guide.title)
+            assertEquals(template.instruction, guide.instruction)
+            assertEquals(template.points.map { StrokePoint(it.x, it.y) }, guide.points)
+            assertEquals("toggle:${template.id}", guide.toggle?.action)
+            assertEquals(listOf("choose:${template.id}", "clear:${template.id}"), guide.actions.map { it.id })
+        }
+        PluginSnapshot(QuickGesturePlugin().descriptor, PluginContributions(), listOf(page))
+    }
     @Test fun ordinarySwipesTinyMarksInvalidCoordinatesAndCancelledDurationsNeverTrigger() {
         val recognizer = GestureRecognizer(GestureTemplates.all.map { it.id }.toSet())
         assertNull(recognizer.recognize((0..30).map { GesturePoint(10f + it * 10, 100f + it * 8) }, 500, 400f, 600f))

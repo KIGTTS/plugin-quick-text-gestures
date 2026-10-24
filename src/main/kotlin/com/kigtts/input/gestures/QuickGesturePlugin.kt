@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 
 class QuickGesturePlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.2", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.3", license = "GPL-3.0-only")
     private lateinit var environment: PluginEnvironment
     private lateinit var settings: GestureSettings
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)

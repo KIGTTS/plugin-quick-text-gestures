@@ -8,11 +8,11 @@ internal object GesturePages {
         GestureTemplates.all.forEach { template ->
             val binding = settings.binding(template.id)
             val entry = catalog?.entries?.firstOrNull { it.id == binding.entryId }
-            add(PageBlock.Group(template.name, listOf(
-                PageBlock.Toggle("启用", binding.enabled, "toggle:${template.id}", template.instruction, symbol = "gesture"),
-                PageBlock.Actions(listOf(PageAction("choose:${template.id}", entry?.let(::label) ?: "选择快捷文本", PluginIcon.TEXT),
-                    PageAction("clear:${template.id}", "清空绑定", PluginIcon.CLOSE))),
-            )))
+            add(PageBlock.StrokeGuide(template.name, template.instruction,
+                    template.points.map { StrokePoint(it.x, it.y) }, entry?.let(::label) ?: "未选择快捷文本",
+                    ManagementToggle(binding.enabled, "toggle:${template.id}"),
+                    listOf(PageAction("choose:${template.id}", "选择快捷文本", PluginIcon.TEXT),
+                        PageAction("clear:${template.id}", "清空绑定", PluginIcon.CLOSE))))
         }
     }, onEnterAction = "load-library")
     fun chooseGroups(gesture: String, catalog: QuickTextSnapshot) = PluginOutcome.Menu("选择快捷文本分组", buildList {
