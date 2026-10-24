@@ -86,6 +86,9 @@ class GesturePluginTest {
             assertEquals(PluginOutcome.RefreshUi, plugin.execute("bind:m_shape:entry-120", PluginContext("", "")))
             assertTrue(library.offsets.containsAll(listOf(0, 50, 100)))
             plugin.execute("master", PluginContext("", "", inputs = mapOf("value" to "true")))
+            val readsBeforePicker = library.offsets.toList()
+            assertTrue(plugin.execute("choose:m_shape", PluginContext("", "")) is PluginOutcome.SelectQuickText)
+            assertEquals(readsBeforePicker, library.offsets)
             library.denied = true
             assertTrue(plugin.execute("load-library", PluginContext("", "")) is PluginOutcome.Dialog)
             assertEquals("entry-120", GestureSettings(File(root, "config/gestures.properties")).binding("m_shape").entryId)

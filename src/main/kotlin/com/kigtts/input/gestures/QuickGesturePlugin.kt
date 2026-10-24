@@ -9,7 +9,7 @@ import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 
 class QuickGesturePlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.0", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.1", license = "GPL-3.0-only")
     private lateinit var environment: PluginEnvironment
     private lateinit var settings: GestureSettings
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -36,29 +36,38 @@ class QuickGesturePlugin : KigPlugin {
                 actionId == "load-library" -> { refresh(); if (settings.enabled) startWatcher(); PluginOutcome.RefreshUi }
                 actionId == "master" -> {
                     val next = context.inputs["value"]?.toBooleanStrictOrNull() ?: !settings.enabled
-                    if (next) refresh()
+                    if (next) ensureCatalog()
                     settings.enabled = next; settings.save()
                     if (next || settings.hasBindings()) startWatcher()
                     revision.value++; PluginOutcome.RefreshUi
                 }
                 actionId == "subtitle-stroke" -> recognize(context)
                 actionId.startsWith("toggle:") -> {
-                    val id = actionId.removePrefix("toggle:"); known(id); refresh()
+                    val id = actionId.removePrefix("toggle:"); known(id); ensureCatalog()
                     val current = settings.binding(id)
                     val next = context.inputs["value"]?.toBooleanStrictOrNull() ?: !current.enabled
-                    if (next && current.entryId.isBlank()) GesturePages.chooseGroups(id, requireNotNull(catalog))
+                    if (next && current.entryId.isBlank()) selectText(id, current)
                     else { settings.set(id, current.copy(enabled = next)); revision.value++; PluginOutcome.RefreshUi }
                 }
                 actionId.startsWith("choose:") -> {
-                    val id = actionId.removePrefix("choose:"); known(id); refresh()
-                    GesturePages.chooseGroups(id, requireNotNull(catalog))
+                    val id = actionId.removePrefix("choose:"); known(id); ensureCatalog()
+                    selectText(id, settings.binding(id))
+                }
+                actionId.startsWith("select:") -> {
+                    val id = actionId.removePrefix("select:"); known(id); ensureCatalog()
+                    val selected = JSONArray(context.inputs["quickTextIds"] ?: "[]")
+                    require(selected.length() == 1) { "请选择一个快捷文本" }
+                    val entryId = selected.getString(0)
+                    require(catalog!!.entries.any { it.id == entryId }) { "快捷文本已被删除，请重新选择" }
+                    settings.set(id, GestureBinding(entryId, true)); startWatcher(); revision.value++
+                    PluginOutcome.RefreshUi
                 }
                 actionId.startsWith("group:") -> {
-                    val parts = actionId.split(':', limit = 4); require(parts.size == 4); known(parts[1]); refresh()
+                    val parts = actionId.split(':', limit = 4); require(parts.size == 4); known(parts[1]); ensureCatalog()
                     GesturePages.chooseEntries(parts[1], parts[2], parts[3].toInt(), requireNotNull(catalog))
                 }
                 actionId.startsWith("bind:") -> {
-                    val parts = actionId.split(':', limit = 3); require(parts.size == 3); known(parts[1]); refresh()
+                    val parts = actionId.split(':', limit = 3); require(parts.size == 3); known(parts[1]); ensureCatalog()
                     require(catalog!!.entries.any { it.id == parts[2] }) { "快捷文本已被删除，请重新选择" }
                     settings.set(parts[1], GestureBinding(parts[2], true)); startWatcher(); revision.value++; PluginOutcome.RefreshUi
                 }
@@ -87,8 +96,9 @@ class QuickGesturePlugin : KigPlugin {
         val width = input["gesture.width"]?.toFloatOrNull() ?: return PluginOutcome.NoAction
         val height = input["gesture.height"]?.toFloatOrNull() ?: return PluginOutcome.NoAction
         val id = GestureRecognizer(settings.active()).recognize(points, duration, width, height) ?: return PluginOutcome.NoAction
-        // Re-resolve at trigger time, even if an invalidation is still in flight.
-        refresh()
+        // Re-resolve at trigger time without paging the entire library on every stroke.
+        // The change watcher invalidates this snapshot when an entry is removed or edited.
+        ensureCatalog()
         val binding = settings.binding(id)
         return if (binding.enabled && binding.entryId.isNotBlank()) PluginOutcome.SendQuickText(binding.entryId) else PluginOutcome.NoAction
     }
@@ -111,6 +121,16 @@ class QuickGesturePlugin : KigPlugin {
         // Failure/denial never clears a binding. Only a complete successful snapshot can do so.
         settings.removeMissing(snapshot.entries.map { it.id }.toSet())
         catalog = snapshot; revision.value++
+    }
+    private fun selectText(id: String, binding: GestureBinding): PluginOutcome.SelectQuickText =
+        PluginOutcome.SelectQuickText(
+            title = "选择快捷文本",
+            mode = QuickTextSelectionMode.SINGLE,
+            selectedIds = binding.entryId.takeIf { it.isNotBlank() }?.let(::listOf).orEmpty(),
+            actionId = "select:$id",
+        )
+    private suspend fun ensureCatalog() {
+        if (catalog == null) refresh()
     }
     @OptIn(FlowPreview::class)
     private fun startWatcher() {
