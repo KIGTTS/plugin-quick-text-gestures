@@ -3,12 +3,12 @@ package com.kigtts.input.gestures
 import com.kigtts.plugin.api.*
 
 internal object GesturePages {
-    fun settings(settings: GestureSettings, catalog: QuickTextSnapshot?) = PluginPage("gestures", "手势触发", buildList {
-        add(PageBlock.Toggle("启用手势触发", settings.enabled, "master", "在大字幕区域一笔画出手势，发送绑定的快捷文本。", symbol = "gesture"))
+    fun settings(settings: GestureSettings, catalog: QuickTextSnapshot?, text: (String, String) -> String = { _, fallback -> fallback }) = PluginPage("gestures", "手势触发", buildList {
+        add(PageBlock.Toggle("启用手势触发", settings.enabled, "master", text("gesture.summary", "在字幕区一笔画出手势，发送绑定的快捷文本。"), symbol = "gesture"))
         GestureTemplates.all.forEach { template ->
             val binding = settings.binding(template.id)
             val entry = catalog?.entries?.firstOrNull { it.id == binding.entryId }
-            add(PageBlock.StrokeGuide(template.name, template.instruction,
+            add(PageBlock.StrokeGuide(template.name, text("gesture.${template.id}", template.instruction),
                     template.points.map { StrokePoint(it.x, it.y) }, entry?.let(::label) ?: "未选择快捷文本",
                     ManagementToggle(binding.enabled, "toggle:${template.id}"),
                     listOf(PageAction("choose:${template.id}", "选择快捷文本", PluginIcon.TEXT),

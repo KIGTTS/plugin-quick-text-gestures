@@ -9,7 +9,9 @@ import kotlinx.coroutines.sync.withLock
 import org.json.JSONArray
 
 class QuickGesturePlugin : KigPlugin {
-    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.3", license = "GPL-3.0-only")
+    override val descriptor = PluginDescriptor("input.quick-gestures", "手势触发", "一笔手势，快速发送绑定的快捷文本", "0.1.4", license = "GPL-3.0-only")
+    override val localization = PluginLocalization("zh-CN", listOf("zh-CN", "zh-CN-x-casual"))
+    private lateinit var strings: PluginStrings
     private lateinit var environment: PluginEnvironment
     private lateinit var settings: GestureSettings
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -18,7 +20,7 @@ class QuickGesturePlugin : KigPlugin {
     override val uiChanges = revision
     @Volatile private var catalog: QuickTextSnapshot? = null
     private var watcher: Job? = null
-    private val broker get() = requireNotNull(environment.quickTextBroker) { "当前应用未开放快捷文本读取" }
+    private val broker get() = requireNotNull(environment.quickTextBroker) { strings.text("permission.quick", environment.locale) }
     override val contributions get() = PluginContributions(
         settingsEntries = listOf(SettingsEntry("gesture-settings", "手势触发", "gestures", PluginIcon.TEXT,
             cardId = "content", cardTitle = "内容", symbol = "gesture")),
@@ -26,10 +28,11 @@ class QuickGesturePlugin : KigPlugin {
             listOf(GestureAction("subtitle-stroke", "画手势发送快捷文本", PluginGesture.SUBTITLE_STROKE)) else emptyList())
     override suspend fun attach(environment: PluginEnvironment) {
         this.environment = environment
+        strings = PluginStrings.fromAssets(environment.assets)
         settings = GestureSettings(environment.storage.file("config/gestures.properties"))
         if (settings.enabled || settings.hasBindings()) startWatcher()
     }
-    override fun page(pageId: String, context: PluginContext): PluginPage? = if (pageId == "gestures") GesturePages.settings(settings, catalog) else null
+    override fun page(pageId: String, context: PluginContext): PluginPage? = if (pageId == "gestures") GesturePages.settings(settings, catalog) { key, fallback -> strings.text(key, context.locale, fallback = fallback) } else null
     override suspend fun execute(actionId: String, context: PluginContext): PluginOutcome = mutex.withLock {
         try {
             when {

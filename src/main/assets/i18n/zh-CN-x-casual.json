@@ -1,0 +1,6 @@
+{
+  "gesture.summary": "在字幕上画个手势，就能发出绑定的快捷文本。",
+  "gesture.m_shape": "从左下往上起笔，一笔画出 M。",
+  "gesture.z_shape": "从左上往右，斜着折回来，再往右画成 Z。",
+  "permission.quick": "允许读取快捷文本后，就能给手势选一句要发的话。"
+}

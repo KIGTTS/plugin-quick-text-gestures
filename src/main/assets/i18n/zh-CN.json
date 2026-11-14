@@ -1,0 +1,6 @@
+{
+  "gesture.summary": "在字幕区一笔画出手势，发送绑定的快捷文本。",
+  "gesture.m_shape": "从左下起笔，连续画出 M 形。",
+  "gesture.z_shape": "从左上向右，再斜向左下，最后向右收笔。",
+  "permission.quick": "手势触发需要读取快捷文本，才能关联和发送词条。"
+}
